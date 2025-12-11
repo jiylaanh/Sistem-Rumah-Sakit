@@ -3,16 +3,11 @@ import { initializeChat, sendMessageToGemini } from './services/geminiService';
 import { Message, AgentType } from './types';
 import AgentBadge from './components/AgentBadge';
 import Dashboard from './components/Dashboard';
-import { Send, Plus, Loader2, FileDown, ShieldCheck, Activity, FileText, LayoutDashboard, MessageSquare, User, Calendar, CreditCard, KeyRound, LogOut } from 'lucide-react';
+import { Send, Plus, Loader2, FileDown, ShieldCheck, Activity, FileText, LayoutDashboard, MessageSquare, User, Calendar, CreditCard } from 'lucide-react';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'chat' | 'dashboard'>('chat');
   
-  // Auth / API Key State
-  const [apiKey, setApiKey] = useState('');
-  const [isConfigured, setIsConfigured] = useState(false);
-  const [tempKey, setTempKey] = useState('');
-
   // Chat State
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
@@ -21,23 +16,7 @@ const App: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Safe check for process.env in various environments (Vite, CRA, or Browser)
-    let envKey = '';
-    try {
-        if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-            envKey = process.env.API_KEY;
-        }
-    } catch (e) {
-        // Ignore process error
-    }
-
-    const localKey = localStorage.getItem('simrs_api_key');
-
-    if (envKey) {
-        handleInitialize(envKey);
-    } else if (localKey) {
-        handleInitialize(localKey);
-    }
+    handleInitialize();
   }, []);
 
   useEffect(() => {
@@ -46,10 +25,8 @@ const App: React.FC = () => {
     }
   }, [messages, currentView]);
 
-  const handleInitialize = (key: string) => {
-      setApiKey(key);
-      initializeChat(key);
-      setIsConfigured(true);
+  const handleInitialize = () => {
+      initializeChat();
 
       // Add welcome message if empty
       setMessages(prev => {
@@ -64,21 +41,6 @@ const App: React.FC = () => {
           }
           return prev;
       });
-  };
-
-  const handleManualKeySubmit = (e: React.FormEvent) => {
-      e.preventDefault();
-      if (tempKey.trim().length > 10) {
-          localStorage.setItem('simrs_api_key', tempKey);
-          handleInitialize(tempKey);
-      }
-  };
-
-  const handleLogout = () => {
-      localStorage.removeItem('simrs_api_key');
-      setIsConfigured(false);
-      setApiKey('');
-      setMessages([]);
   };
 
   const handleSendMessage = async (textOverride?: string) => {
@@ -162,56 +124,6 @@ const App: React.FC = () => {
     },
   ];
 
-  // --- API KEY ENTRY SCREEN ---
-  if (!isConfigured) {
-      return (
-          <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
-                  <div className="flex justify-center mb-6">
-                      <div className="bg-teal-100 p-4 rounded-full">
-                          <Activity className="w-10 h-10 text-teal-600" />
-                      </div>
-                  </div>
-                  <h1 className="text-2xl font-bold text-center text-slate-800 mb-2">SIMRS Agentic AI</h1>
-                  <p className="text-center text-slate-500 text-sm mb-8">
-                      Sistem Manajemen Rumah Sakit Cerdas berbasis Multi-Agent. 
-                      Masukkan API Key Gemini Anda untuk memulai demo.
-                  </p>
-                  
-                  <form onSubmit={handleManualKeySubmit} className="space-y-4">
-                      <div>
-                          <label className="block text-xs font-semibold text-slate-700 uppercase mb-2">Google Gemini API Key</label>
-                          <div className="relative">
-                              <KeyRound className="absolute left-3 top-2.5 w-5 h-5 text-slate-400" />
-                              <input 
-                                  type="password" 
-                                  value={tempKey}
-                                  onChange={(e) => setTempKey(e.target.value)}
-                                  placeholder="AIzaSy..."
-                                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none text-sm"
-                                  required
-                              />
-                          </div>
-                      </div>
-                      <button 
-                          type="submit" 
-                          className="w-full bg-slate-900 text-white py-2.5 rounded-lg font-medium hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
-                      >
-                          Masuk ke Sistem <Send className="w-4 h-4" />
-                      </button>
-                  </form>
-                  
-                  <div className="mt-6 text-center">
-                      <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-xs text-teal-600 hover:underline">
-                          Belum punya key? Dapatkan di Google AI Studio
-                      </a>
-                  </div>
-              </div>
-          </div>
-      );
-  }
-
-  // --- MAIN APP ---
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
       {/* Sidebar - Context & Navigation */}
@@ -298,9 +210,6 @@ const App: React.FC = () => {
                         <p className="text-xs text-slate-400">Kepala Instalasi</p>
                     </div>
                 </div>
-                <button onClick={handleLogout} title="Keluar / Ganti Key" className="text-slate-400 hover:text-white">
-                    <LogOut className="w-4 h-4" />
-                </button>
             </div>
         </div>
       </aside>

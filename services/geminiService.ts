@@ -108,8 +108,8 @@ const generateDocumentTool: FunctionDeclaration = {
 
 let chatSession: Chat | null = null;
 
-export const initializeChat = (apiKey: string) => {
-  const ai = new GoogleGenAI({ apiKey });
+export const initializeChat = () => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   chatSession = ai.chats.create({
     model: 'gemini-2.5-flash',
@@ -173,7 +173,11 @@ export interface ChatResponse {
 }
 
 export const sendMessageToGemini = async (message: string): Promise<ChatResponse> => {
-  if (!chatSession) throw new Error("Chat session not initialized");
+  if (!chatSession) {
+    // Attempt to initialize if not done
+    initializeChat();
+    if (!chatSession) throw new Error("Chat session not initialized");
+  }
 
   // Initial prompt
   let response = await chatSession.sendMessage({ message });
